@@ -3,23 +3,79 @@
 {% block title %}指示・発信ボード - 防災アプリ{% endblock %}
 
 {% block content %}
-<h2>発信ボード</h2>
-<p>住民向けの発信を登録・確認できます。</p>
+<h2 class="section-heading">指示ボード</h2>
+<p>災害に関する情報を項目ごとに確認できます。</p>
 
-<!-- 発信一覧 -->
-<h3>発信一覧</h3>
-{% if instructions %}
-<table border="1" cellpadding="5">
-  <tr>
-    <th>内容</th>
-  </tr>
-  {% for inst in instructions %}
-  <tr>
-    <td>{{ inst.content }}{% if inst.shelter %}（避難先: {{ inst.shelter }}）{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p>登録されている指示はありません。</p>
-{% endif %}
+<section class="board-section">
+  <h3>① 被害状況地図</h3>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>地図</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board_data['被害状況地図'] %}
+      <tr><td>{{ row['地図'] }}</td></tr>
+      {% else %}<tr class="empty-row"><td>表示するデータはありません</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="board-section">
+  <h3>② 被害状況一覧</h3>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>発生日時</th>
+        <th>場所</th>
+        <th>被害内容</th>
+        <th>状況</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board_data['被害状況一覧'] %}
+      <tr><td>{{ row['発生日時'] }}</td><td>{{ row['場所'] }}</td><td>{{ row['被害内容'] }}</td><td>{{ row['状況'] }}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="4">表示するデータはありません</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="board-section">
+  <h3>③ 避難指示</h3>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>対象地域</th>
+        <th>指示内容</th>
+        <th>発令日時</th>
+        <th>状況</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board_data['避難指示'] %}
+      <tr><td>{{ row['対象地域'] }}</td><td>{{ row['指示内容'] }}</td><td>{{ row['発令日時'] }}</td><td>{{ row['状況'] }}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="4">表示するデータはありません</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="board-section">
+  <h3>④ 派遣された職員の一覧</h3>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>氏名</th>
+        <th>所属</th>
+        <th>派遣先</th>
+        <th>派遣日時</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board_data['派遣職員'] %}
+      <tr><td>{{ row['氏名'] }}</td><td>{{ row['所属'] }}</td><td>{{ row['派遣先'] }}</td><td>{{ row['派遣日時'] }}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="4">表示するデータはありません</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
 {% endblock %}

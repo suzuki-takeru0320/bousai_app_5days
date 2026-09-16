@@ -5,6 +5,7 @@ import json
 import os
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from openpyxl import load_workbook
 
 # app.py はプロジェクト直下に置く。
 # 実体（templates / static / data）は bousai_app/ 配下にあるので、そこを参照する。
@@ -82,6 +83,14 @@ WARNING_CODES = {
 # サンプルデータの読み込み
 DATA_FILE = os.path.join(APP_DIR, 'data', 'shelters.json')
 INSTRUCTIONS_FILE = os.path.join(APP_DIR, 'data', 'instructions.json')
+BOARD_DATA_FILE = os.path.join(APP_DIR, 'data', 'board_data.xlsx')
+
+BOARD_SHEETS = {
+    '被害状況地図': ['地図'],
+    '被害状況一覧': ['発生日時', '場所', '被害内容', '状況'],
+    '避難指示': ['対象地域', '指示内容', '発令日時', '状況'],
+    '派遣職員': ['氏名', '所属', '派遣先', '派遣日時'],
+}
 
 def load_json(path, default):
     """JSONファイルを読み込む（存在しない・壊れている場合は default を返す）"""
@@ -93,6 +102,28 @@ def load_json(path, default):
 
 shelters = load_json(DATA_FILE, [])
 instructions = load_json(INSTRUCTIONS_FILE, [])
+
+def load_board_data():
+    """Excelの指示ボードデータをシートごとのリストとして読み込む"""
+    board_data = {sheet_name: [] for sheet_name in BOARD_SHEETS}
+    try:
+        workbook = load_workbook(BOARD_DATA_FILE, read_only=True, data_only=True)
+        for sheet_name, headers in BOARD_SHEETS.items():
+            if sheet_name not in workbook.sheetnames:
+                continue
+
+            worksheet = workbook[sheet_name]
+            for row in worksheet.iter_rows(min_row=2, values_only=True):
+                if not any(value is not None and str(value).strip() for value in row):
+                    continue
+                board_data[sheet_name].append({
+                    header: '' if value is None else str(value)
+                    for header, value in zip(headers, row)
+                })
+        workbook.close()
+    except (FileNotFoundError, OSError):
+        pass
+    return board_data
 
 def save_instructions():
     """指示ボードのデータをファイルに保存する"""
@@ -321,8 +352,7 @@ def all_shelters():
 @app.route('/board')
 @login_required
 def board():
-    resident_instructions = [i for i in instructions if i.get('target') == '住民']
-    return render_template('board.html', instructions=resident_instructions)
+    return render_template('board.html', board_data=load_board_data())
 
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
