@@ -4,31 +4,276 @@
   <meta charset="utf-8">
   <title>{% block title %}防災アプリ{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --blue: #2556a5;
+      --blue-dark: #19468e;
+      --green: #22a34a;
+      --ink: #24364d;
+      --muted: #60748b;
+      --page: #f7f9fc;
+      --line: #edf1f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+    }
+
+    .site-header {
+      height: 70px;
+      background: linear-gradient(110deg, var(--blue-dark), var(--blue));
+      color: #fff;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(100% - 40px, 1120px);
+      height: 100%;
+      margin: 0 auto;
+    }
+
+    .site-title {
+      margin: 0;
+      color: #fff;
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    .menu-toggle {
+      border: 0;
+      padding: 7px;
+      color: #fff;
+      background: transparent;
+      font-size: 27px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .site-nav {
+      position: absolute;
+      z-index: 1000;
+      top: 70px;
+      right: max(20px, calc((100% - 1120px) / 2));
+      display: none;
+      min-width: 220px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 12px 30px rgba(24, 51, 88, .16);
+    }
+
+    .site-nav.is-open {
+      display: grid;
+      gap: 2px;
+    }
+
+    .site-nav a,
+    .nav-status {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 7px;
+      color: var(--ink);
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .site-nav a:hover {
+      background: #f0f5ff;
+      color: var(--blue);
+    }
+
+    .nav-status {
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+    }
+
+    main {
+      width: min(100% - 40px, 910px);
+      margin: 32px auto 64px;
+    }
+
+    .home-card {
+      margin-bottom: 36px;
+      padding: 28px;
+      border: 1px solid #f0f3f7;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 7px 25px rgba(46, 78, 117, .08);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 20px;
+      color: var(--blue);
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .section-heading .heading-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .weather-heading {
+      justify-content: space-between;
+    }
+
+    .refresh-label {
+      color: var(--green);
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .refresh-label::before {
+      content: "↻";
+      margin-right: 6px;
+      font-size: 23px;
+      vertical-align: -2px;
+    }
+
+    #shelterMap {
+      height: 365px;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    .weather-panel {
+      padding: 22px 20px;
+      border-radius: 12px;
+      background: #f7f8fa;
+    }
+
+    .weather-panel p {
+      margin: 8px 0;
+    }
+
+    .weather-place {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .weather-place::before {
+      content: "⌖";
+      margin-right: 7px;
+      color: #566a7d;
+      font-size: 24px;
+      vertical-align: -2px;
+    }
+
+    .weather-clear {
+      color: var(--green);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .weather-clear::before {
+      content: "●";
+      display: inline-block;
+      margin-right: 8px;
+      font-size: 15px;
+      vertical-align: 1px;
+    }
+
+    .weather-detail {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .weather-detail .detail-icon {
+      display: inline-block;
+      width: 22px;
+      color: #506477;
+      font-size: 17px;
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        width: min(100% - 28px, 1120px);
+      }
+
+      .site-title {
+        font-size: 21px;
+      }
+
+      main {
+        width: min(100% - 24px, 910px);
+        margin-top: 20px;
+      }
+
+      .home-card {
+        margin-bottom: 20px;
+        padding: 18px;
+        border-radius: 12px;
+      }
+
+      .section-heading {
+        align-items: flex-start;
+        font-size: 19px;
+      }
+
+      .weather-heading {
+        align-items: center;
+      }
+
+      .refresh-label {
+        font-size: 12px;
+      }
+
+      #shelterMap {
+        height: 290px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- ヘッダー -->
-  <h1>防災アプリ</h1>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1 class="site-title">防災アプリ</h1>
+      <button class="menu-toggle" type="button" aria-label="メニューを開く" aria-expanded="false">☰</button>
+    </div>
+  </header>
 
-  <!-- ナビゲーション -->
-  <nav>
-    <a href="/">ホーム</a> |
-    <a href="/shelter_search">避難所検索</a> |
-    <a href="/shelter_register">避難所登録</a> |
+  <nav class="site-nav" id="siteNav" aria-label="メインメニュー">
+    <a href="/">ホーム</a>
+    <a href="/shelter_search">避難所検索</a>
+    <a href="/shelter_register">避難所登録</a>
     <a href="/board">指示・発信ボード</a>
-    ｜
     {% if session.logged_in %}
-      ログイン中{% if session.username %}（{{ session.username }}）{% endif %}
+      <span class="nav-status">ログイン中{% if session.username %}（{{ session.username }}）{% endif %}</span>
       <a href="/logout">ログアウト</a>
     {% else %}
-      未ログイン
+      <span class="nav-status">未ログイン</span>
       <a href="/login">ログイン</a>
     {% endif %}
   </nav>
-  <hr>
 
   <main>
-    <!-- ここに子テンプレートの content が入る -->
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    const menuToggle = document.querySelector('.menu-toggle');
+    const siteNav = document.querySelector('#siteNav');
+
+    menuToggle.addEventListener('click', () => {
+      const isOpen = siteNav.classList.toggle('is-open');
+      menuToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  </script>
 </body>
 </html>
