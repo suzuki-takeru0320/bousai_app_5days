@@ -6,8 +6,13 @@
 <h2 class="section-heading">指示ボード</h2>
 <p>災害に関する情報を項目ごとに確認できます。</p>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <section class="board-section">
   <h3>① 被害状況地図</h3>
+  <div id="damageMap" class="damage-map" aria-label="被害状況地図"></div>
+  <p class="map-note">被害状況一覧に登録された地点を表示しています。</p>
   <table class="board-table">
     <thead>
       <tr>
@@ -22,20 +27,41 @@
   </table>
 </section>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const map = L.map('damageMap').setView({{ map_center|tojson }}, 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    referrerPolicy: 'strict-origin-when-cross-origin'
+  }).addTo(map);
+
+  const damagePoints = {{ damage_map_points|tojson }};
+  damagePoints.forEach(point => {
+    const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+    marker.bindPopup(`
+      <strong>${point.place}</strong><br>
+      被害内容: ${point.damage}<br>
+      状況: ${point.status}<br>
+      発生日時: ${point.occurred_at}
+    `);
+  });
+});
+</script>
+
 <section class="board-section">
   <h3>② 被害状況一覧</h3>
   <table class="board-table">
     <thead>
       <tr>
-        <th>発生日時</th>
         <th>場所</th>
         <th>被害内容</th>
+        <th>発生日時</th>
         <th>状況</th>
       </tr>
     </thead>
     <tbody>
       {% for row in board_data['被害状況一覧'] %}
-      <tr><td>{{ row['発生日時'] }}</td><td>{{ row['場所'] }}</td><td>{{ row['被害内容'] }}</td><td>{{ row['状況'] }}</td></tr>
+      <tr><td>{{ row['場所'] }}</td><td>{{ row['被害内容'] }}</td><td>{{ row['発生日時'] }}</td><td>{{ row['状況'] }}</td></tr>
       {% else %}<tr class="empty-row"><td colspan="4">表示するデータはありません</td></tr>{% endfor %}
     </tbody>
   </table>

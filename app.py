@@ -92,6 +92,20 @@ BOARD_SHEETS = {
     '派遣職員': ['氏名', '所属', '派遣先', '派遣日時'],
 }
 
+BOARD_HEADER_ALIASES = {
+    '地点ごとの被害状況': '地図',
+}
+
+AOAMORI_MAP_CENTER = [40.8244, 140.7400]
+AREA_COORDINATES = {
+    '青森市中央部': [40.8222, 140.7474],
+    '青森駅周辺': [40.8298, 140.7346],
+    '浪岡地区': [40.7105, 140.5908],
+    '浅虫地区': [40.8898, 140.8615],
+    '八甲田周辺': [40.6792, 140.9318],
+    '油川地区': [40.8580, 140.6860],
+}
+
 def load_json(path, default):
     """JSONファイルを読み込む（存在しない・壊れている場合は default を返す）"""
     try:
@@ -113,17 +127,51 @@ def load_board_data():
                 continue
 
             worksheet = workbook[sheet_name]
-            for row in worksheet.iter_rows(min_row=2, values_only=True):
+            rows = worksheet.iter_rows(values_only=True)
+            excel_headers = next(rows, ())
+            header_indexes = {}
+            for index, header in enumerate(excel_headers):
+                normalized_header = BOARD_HEADER_ALIASES.get(
+                    str(header).strip() if header is not None else '',
+                    str(header).strip() if header is not None else ''
+                )
+                header_indexes[normalized_header] = index
+
+            for row in rows:
                 if not any(value is not None and str(value).strip() for value in row):
                     continue
                 board_data[sheet_name].append({
-                    header: '' if value is None else str(value)
-                    for header, value in zip(headers, row)
+                    header: (
+                        ''
+                        if header_indexes.get(header) is None
+                        or header_indexes[header] >= len(row)
+                        or row[header_indexes[header]] is None
+                        else str(row[header_indexes[header]])
+                    )
+                    for header in headers
                 })
         workbook.close()
     except (FileNotFoundError, OSError):
         pass
     return board_data
+
+def build_damage_map_points(damage_rows):
+    """被害状況一覧の場所を地図表示用の地点データに変換する"""
+    points = []
+    for row in damage_rows:
+        place = row.get('場所', '')
+        coordinates = AREA_COORDINATES.get(place)
+        if not coordinates:
+            continue
+        points.append({
+            'latitude': coordinates[0],
+            'longitude': coordinates[1],
+            'place': place,
+            'damage': row.get('被害内容', ''),
+            'status': row.get('状況', ''),
+            'occurred_at': row.get('発生日時', ''),
+        })
+    return points
 
 def save_instructions():
     """指示ボードのデータをファイルに保存する"""
@@ -352,7 +400,13 @@ def all_shelters():
 @app.route('/board')
 @login_required
 def board():
-    return render_template('board.html', board_data=load_board_data())
+    board_data = load_board_data()
+    return render_template(
+        'board.html',
+        board_data=board_data,
+        damage_map_points=build_damage_map_points(board_data['被害状況一覧']),
+        map_center=AOAMORI_MAP_CENTER,
+    )
 
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
